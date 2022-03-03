@@ -1,9 +1,10 @@
-
 // Require Express.js
 const express = require('express')
 const app = express()
 const args = require('minimist')(process.argv.slice(2))
+
 args['port']
+
 const call = args.call
 const port = args.port || process.env.PORT || 5000
 
@@ -23,36 +24,79 @@ app.get('/app/', (req, res) => {
     res.statusMessage = 'OK';
     res.writeHead(res.statusCode, { 'Content-Type': 'text/plain' });
     res.end(res.statusCode + ' ' + res.statusMessage);
-
-    // res.status(200).send('OK')
 });
+
+
+function coinFlip() {
+    return Math.floor(Math.random() * 2) < 1 ? 'heads' : 'tails';
+}
+
 
 app.get('/app/flip/', (req, res) => {
-    res.send(Math.floor(Math.random() * 2) < 1 ? 'heads' : 'tails');
-
+    res.send({ flip: coinFlip() });
 });
 
-app.get('/app/flips/:number', (req, res) => {
+
+function coinFlips(flips) {
     const flipResults = [];
 
-    for (var i = 0; i < req.params.number; i++) {
-        flipResults.push(Math.floor(Math.random() * 2) < 1 ? 'heads' : 'tails');
+    const output = { raw: [], summary: "" };
+
+    for (var i = 0; i < flips; i++) {
+        flipResults.push(coinFlip());
     }
 
-    res.send(flipResults);
+    output.raw = flipResults;
+    output.summary = countFlips(flipResults);
+
+    return output;
+}
+
+function countFlips(array) {
+    var counts = { heads: 0, tails: 0 };
+
+    array.forEach(element => {
+        if (element == "heads")
+            counts.heads++;
+        else
+            counts.tails++;
+    });
+
+    if (counts.heads == 0)
+        delete counts.heads;
+    else if (counts.tails == 0)
+        delete counts.tails;
+
+    return counts;
+
+}
+
+
+app.get('/app/flips/:number', (req, res) => {
+    res.send(coinFlips(req.params.number));
 });
+
+
+function flipACoin(call) {
+    var result = coinFlip();
+
+    const output = { call: "", flip: "", result: "" };
+
+    output.call = call;
+    output.flip = result;
+    output.result = (call == result ? "win" : "lose");
+
+    return output;
+}
+
 
 app.get('/app/flip/call/heads', (req, res) => {
-    result = Math.floor(Math.random() * 2) < 1 ? 'heads' : 'tails';
-
-    res.send('{"call":"heads","flip":"' + result + '","result":"' + (result == 'heads' ? 'win' : 'lose') + '"}');
-
+    res.send(flipACoin('heads'));
 });
 
-app.get('/app/flip/call/tails', (req, res) => {
-    result = Math.floor(Math.random() * 2) < 1 ? 'heads' : 'tails';
 
-    res.send('{"call":"heads","flip":"' + result + '","result":"' + (result == 'tails' ? 'win' : 'lose') + '"}');
+app.get('/app/flip/call/tails', (req, res) => {
+    res.send(flipACoin('tails'));
 });
 
 
